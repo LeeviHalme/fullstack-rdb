@@ -1,9 +1,16 @@
 import { DataTypes, Model } from "sequelize";
-import sequelize from "../services/db";
+import { sequelize } from "../utils/db";
 
-class Blog extends Model {}
+class Blog extends Model {
+  public id!: number;
+  public author!: string;
+  public url!: string;
+  public title!: string;
+  public likes!: number;
+  public userId!: number;
+}
 
-const BlogModel = Blog.init(
+Blog.init(
   {
     id: {
       type: DataTypes.INTEGER,
@@ -29,10 +36,10 @@ const BlogModel = Blog.init(
   },
   {
     sequelize,
-    modelName: "Blog",
-    tableName: "blogs",
+    modelName: "blog",
     timestamps: false,
+    underscored: true,
   }
 );
 
-export default BlogModel;
+export default Blog;
