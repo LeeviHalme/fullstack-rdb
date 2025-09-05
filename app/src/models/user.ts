@@ -6,6 +6,7 @@ class User extends Model {
   public id!: number;
   public username!: string;
   public name!: string;
+  public disabled!: boolean;
 }
 
 User.init(
@@ -26,6 +27,11 @@ User.init(
     name: {
       type: DataTypes.STRING,
       allowNull: false,
+    },
+    disabled: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
     },
   },
   {

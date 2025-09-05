@@ -2,6 +2,7 @@ import { ErrorRequestHandler, RequestHandler } from "express";
 import jwt from "jsonwebtoken";
 import { JWT_SECRET } from "./config";
 import { JwtPayload } from "../types";
+import { Session } from "../models";
 
 // middleware for error handling
 export const errorHandler: ErrorRequestHandler = (error, _, response, next) => {
@@ -12,7 +13,7 @@ export const errorHandler: ErrorRequestHandler = (error, _, response, next) => {
     return response.status(400).send({ error: error.message });
   } else if (error.name === "SequelizeDatabaseError") {
     return response.status(400).send({ error: "Database error" });
-  } else if (error.name === "AuthenticationError") {
+  } else if (error.name === "AuthenticationError" || error.cause === "AuthenticationError") {
     return response.status(401).send({ error: error.message });
   }
 
@@ -20,7 +21,7 @@ export const errorHandler: ErrorRequestHandler = (error, _, response, next) => {
 };
 
 // middleware for authentication
-export const validateAndInjectJwt: RequestHandler = (request, response, next) => {
+export const validateAndInjectJwt: RequestHandler = async (request, response, next) => {
   const authHeader = request.get("authorization");
 
   request.token = undefined;
@@ -32,10 +33,25 @@ export const validateAndInjectJwt: RequestHandler = (request, response, next) =>
     try {
       const decoded = jwt.verify(token, JWT_SECRET) as JwtPayload;
 
+      // Check if the token exists in the database
+      const session = await Session.findOne({ where: { token }, include: ["user"] });
+
+      if (!session) {
+        return next(new Error("Token invalid", { cause: "AuthenticationError" }));
+      }
+
+      // @ts-ignore
+      const user = session.user.toJSON();
+
+      if (user.disabled) {
+        return next(new Error("User account is disabled", { cause: "AuthenticationError" }));
+      }
+
       // inject token and userId into request object
       request.token = token;
       request.userId = decoded.id;
     } catch (error) {
+      console.error("JWT verification error:", error);
       return next(new Error("Token invalid", { cause: "AuthenticationError" }));
     }
   } else {

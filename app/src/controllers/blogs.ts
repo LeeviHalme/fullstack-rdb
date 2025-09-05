@@ -34,10 +34,10 @@ router.get("/", async (req, res, next) => {
 
 // POST /api/blogs
 router.post("/", validateAndInjectJwt, async (req, res, next) => {
-  const { title, author, url } = req.body;
+  const { title, author, url, year } = req.body;
 
   try {
-    const newBlog = await Blog.create({ title, author, url, userId: req.userId });
+    const newBlog = await Blog.create({ title, author, url, year, userId: req.userId });
 
     return res.status(201).json(newBlog);
   } catch (error) {

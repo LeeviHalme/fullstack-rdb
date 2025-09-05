@@ -1,8 +1,9 @@
 import express from "express";
 import jwt from "jsonwebtoken";
 
-import { User } from "../models";
+import { User, Session } from "../models";
 import { JWT_SECRET } from "../utils/config";
+import { validateAndInjectJwt } from "../utils/middleware";
 
 const router = express.Router();
 
@@ -21,6 +22,10 @@ router.post("/login", async (req, res, next) => {
       return res.status(401).json({ error: "Invalid username or password" });
     }
 
+    if (user.disabled) {
+      return res.status(403).json({ error: "User account is disabled" });
+    }
+
     const userForToken = {
       username: user.username,
       id: user.id,
@@ -28,7 +33,22 @@ router.post("/login", async (req, res, next) => {
 
     const token = jwt.sign(userForToken, JWT_SECRET);
 
+    // save session
+    await Session.create({ token, user_id: user.id });
+
     return res.status(200).json({ token, user: user.toJSON() });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// POST /api/logout
+router.post("/logout", validateAndInjectJwt, async (req, res, next) => {
+  try {
+    // Delete session
+    await Session.destroy({ where: { user_id: req.userId } });
+
+    return res.status(204).end();
   } catch (error) {
     next(error);
   }
