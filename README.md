@@ -27,4 +27,4 @@ Repository for Fullstack Open -course (part 13) organized by University of Helsi
 - [x] 13.21
 - [x] 13.22
 - [x] 13.23
-- [ ] 13.24
+- [x] 13.24
